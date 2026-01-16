@@ -1,7 +1,9 @@
 {
   "name": "podomoro-timer",
   "private": true,
-  "version": "0.0.0",
+  "version": "2.0.0",
+  "description": "A modern, aesthetic Pomodoro timer for focus and productivity.",
+  "author": "Khalif Apps",
   "type": "module",
   "main": "electron/main.cjs",
   "scripts": {
@@ -13,18 +15,38 @@
     "electron:dev": "concurrently -k \"cross-env BROWSER=none npm run dev\" \"npm run electron\"",
     "electron:build": "npm run build && electron-builder"
   },
-  "dependencies": {
-    "@tailwindcss/vite": "^4.1.18",
-    "lucide-react": "^0.562.0",
-    "react": "^19.2.0",
-    "react-dom": "^19.2.0",
-    "react-router-dom": "^7.12.0",
-    "recharts": "^3.6.0",
-    "tailwindcss": "^4.1.18",
-    "zustand": "^5.0.10"
+  "build": {
+    "appId": "com.khalifapps.medomoro",
+    "productName": "Medomoro",
+    "icon": "public/ic_logo.png",
+    "compression": "maximum",
+    "electronLanguages": [
+      "en-US"
+    ],
+    "directories": {
+      "output": "release"
+    },
+    "win": {
+      "target": "nsis"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "deleteAppDataOnUninstall": true,
+      "artifactName": "${productName}-Setup-${version}.${ext}"
+    },
+    "files": [
+      "dist/**/*",
+      "electron/**/*",
+      "package.json",
+      "!**/*.map",
+      "!**/node_modules/*"
+    ]
   },
+  "dependencies": {},
   "devDependencies": {
     "@eslint/js": "^9.39.1",
+    "@tailwindcss/vite": "^4.1.18",
     "@types/react": "^19.2.5",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^5.1.1",
@@ -36,7 +58,14 @@
     "eslint-plugin-react-hooks": "^7.0.1",
     "eslint-plugin-react-refresh": "^0.4.24",
     "globals": "^16.5.0",
+    "lucide-react": "^0.562.0",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "react-router-dom": "^7.12.0",
+    "recharts": "^3.6.0",
+    "tailwindcss": "^4.1.18",
     "vite": "^7.2.4",
-    "wait-on": "^9.0.3"
+    "wait-on": "^9.0.3",
+    "zustand": "^5.0.10"
   }
 }

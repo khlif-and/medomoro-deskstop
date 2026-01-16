@@ -1,3 +1,4 @@
+import React, { useState, useEffect } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import reactLogo from './assets/react.svg'
 import viteLogo from '/vite.svg'
@@ -10,9 +11,31 @@ import TaskTemplate from './components/templates/TaskTemplate';
 import PodomoroTemplate from './components/templates/PodomoroTemplate';
 import JournalTemplate from './components/templates/JournalTemplate';
 import MemoTemplate from './components/templates/MemoTemplate';
+import CalendarTemplate from './components/templates/CalendarTemplate';
+import MuslimTemplate from './components/templates/MuslimTemplate';
+import MiniTimerTemplate from './components/templates/MiniTimerTemplate';
 
 function App() {
   const { themeColor } = useProfileStore();
+  const [isMiniMode, setIsMiniMode] = useState(window.innerWidth < 450);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMiniMode(window.innerWidth < 450);
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  const handleExpand = () => {
+    // Send IPC to Main process to resize window
+    window.electron?.ipcRenderer?.send('app:main-mode');
+  };
+
+  if (isMiniMode) {
+    return <MiniTimerTemplate onExpand={handleExpand} />;
+  }
 
   return (
     <div
@@ -31,7 +54,8 @@ function App() {
           <Route path="/journal" element={<JournalTemplate />} />
           <Route path="/memo" element={<MemoTemplate />} />
           {/* Calendar route placeholder if needed, or mapped to existing templates */}
-          <Route path="/calendar" element={<div className="p-8">Calendar Page (Coming Soon)</div>} />
+          <Route path="/calendar" element={<CalendarTemplate />} />
+          <Route path="/muslim" element={<MuslimTemplate />} />
         </Routes>
       </main>
     </div>

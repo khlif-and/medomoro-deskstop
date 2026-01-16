@@ -3,7 +3,7 @@ import { useProfileStore } from '../../store/useProfileStore';
 import { Camera } from 'lucide-react';
 
 const ProfileCard = () => {
-    const { name, role, price, profileImage, setProfile } = useProfileStore();
+    const { name, role, profileImage, setProfile } = useProfileStore();
     const fileInputRef = useRef(null);
 
     const getDominantColor = (imageSrc) => {
@@ -42,11 +42,13 @@ const ProfileCard = () => {
 
     return (
         <div className="bg-gray-300 rounded-[32px] p-0 relative overflow-hidden aspect-[4/5] group w-full mb-6">
-            <img
-                src={profileImage}
-                alt={name}
-                className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-            />
+            {profileImage && (
+                <img
+                    src={profileImage}
+                    alt={name}
+                    className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                />
+            )}
 
             <div
                 className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center cursor-pointer z-10"
@@ -81,17 +83,7 @@ const ProfileCard = () => {
                 />
             </div>
 
-            <div className="absolute bottom-6 right-6 z-20">
-                <div className="relative">
-                    <input
-                        type="text"
-                        value={price}
-                        onChange={(e) => setProfile({ price: e.target.value })}
-                        className="bg-white/20 backdrop-blur-md px-4 py-1.5 rounded-full border border-white/30 text-white text-sm font-medium w-24 text-center outline-none focus:bg-white/30 transition-colors"
-                        placeholder="Price"
-                    />
-                </div>
-            </div>
+
         </div>
     );
 };
