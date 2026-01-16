@@ -7,7 +7,12 @@ export const useTaskStore = create(
             tasks: [],
 
             addTask: (task) => set((state) => ({
-                tasks: [...state.tasks, { ...task, id: Date.now(), completed: false }]
+                tasks: [...state.tasks, {
+                    ...task,
+                    id: Date.now(),
+                    completed: false,
+                    date: task.date || new Date().toLocaleDateString('en-CA') // Default to YYYY-MM-DD (Local)
+                }]
             })),
 
             deleteTask: (id) => set((state) => ({

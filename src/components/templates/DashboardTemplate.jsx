@@ -6,6 +6,8 @@ import ActivityCharts from '../organisms/ActivityCharts';
 import TimeTracker from '../organisms/TimeTracker';
 import CalendarTimeline from '../organisms/CalendarTimeline';
 import TaskList from '../organisms/TaskList';
+import WorshipWidgets from '../organisms/WorshipWidgets';
+import WorshipSummary from '../organisms/WorshipSummary';
 
 const DashboardTemplate = () => {
     return (
@@ -29,10 +31,13 @@ const DashboardTemplate = () => {
                         <TimeTracker />
                     </div>
                     <CalendarTimeline />
+                    {/* Visual Worship Summary */}
+                    <WorshipSummary />
                 </div>
 
                 {/* Right Column - Tasks */}
                 <div className="col-span-12 lg:col-span-3">
+                    <WorshipWidgets />
                     <TaskList />
                 </div>
             </div>

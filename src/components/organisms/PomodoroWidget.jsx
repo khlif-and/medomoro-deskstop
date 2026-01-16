@@ -6,6 +6,7 @@ import TimerControls from '../molecules/TimerControls';
 import ModeSelector from '../molecules/ModeSelector';
 import SessionIndicator from '../molecules/SessionIndicator';
 import TimerSettings from './TimerSettings';
+import alarmSound from '../../assets/alarm.mp3?url';
 
 const MODES = {
     pomodoro: { id: 'pomodoro', label: 'Focus', color: 'text-rose-500', bg: 'bg-rose-50', ring: 'stroke-rose-500', icon: Brain },
@@ -31,54 +32,79 @@ const PomodoroWidget = () => {
     // Local UI State
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
+    // Audio Logic - Persistent Alarm
+    const [isAlarmPlaying, setIsAlarmPlaying] = useState(false);
+    const audioRef = useRef(new Audio(alarmSound));
+    const prevSessionsRef = useRef(sessionsCompleted);
+
+    // Configure audio loop
+    useEffect(() => {
+        audioRef.current.loop = true;
+    }, []);
+
     // Sync time on mount (handle background throttling/tab switch)
     useEffect(() => {
         syncTime();
-    }, []);
 
-    // Timer Interval - Driver for the global tick
+        const handleVisibilityChange = () => {
+            if (document.visibilityState === 'visible') {
+                syncTime();
+            }
+        };
+
+        const handleFocus = () => {
+            syncTime();
+        };
+
+        window.addEventListener('focus', handleFocus);
+        document.addEventListener('visibilitychange', handleVisibilityChange);
+
+        return () => {
+            window.removeEventListener('focus', handleFocus);
+            document.removeEventListener('visibilitychange', handleVisibilityChange);
+        };
+    }, [syncTime]);
+
+    // Timer Interval - Handled by Web Worker in Store now.
+    // useEffect for interval removed.
+
+    // Watch for ANY timer completion (Focus or Break)
+    const prevCompletionRef = useRef(store.completionTrigger);
+
     useEffect(() => {
-        let interval = null;
-        if (isActive) {
-            interval = setInterval(() => {
-                tick();
-            }, 1000);
+        if (store.completionTrigger > prevCompletionRef.current) {
+            startAlarm();
+            prevCompletionRef.current = store.completionTrigger;
         }
-        return () => clearInterval(interval);
-    }, [isActive, tick]);
+    }, [store.completionTrigger]);
 
-    // Audio Logic - Triggered by Session Completion
-    const prevSessionsRef = useRef(sessionsCompleted);
-    useEffect(() => {
-        if (sessionsCompleted > prevSessionsRef.current) {
-            playNotification();
-            prevSessionsRef.current = sessionsCompleted;
-        }
-        // Also update ref if it resets (though sessions usually only go up)
-        if (sessionsCompleted < prevSessionsRef.current) {
-            prevSessionsRef.current = sessionsCompleted;
-        }
-    }, [sessionsCompleted]);
+    const startAlarm = () => {
+        if (isAlarmPlaying) return;
 
-    // Audio Context for Beep
-    const playNotification = () => {
         try {
-            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-            const oscillator = audioContext.createOscillator();
-            const gainNode = audioContext.createGain();
+            audioRef.current.currentTime = 0;
+            const playPromise = audioRef.current.play();
 
-            oscillator.connect(gainNode);
-            gainNode.connect(audioContext.destination);
+            if (playPromise !== undefined) {
+                playPromise.catch(error => {
+                    console.error("Audio playback failed:", error);
+                });
+            }
 
-            oscillator.type = 'sine';
-            oscillator.frequency.setValueAtTime(880, audioContext.currentTime); // A5
-            gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
-
-            oscillator.start();
-            oscillator.stop(audioContext.currentTime + 0.5);
+            setIsAlarmPlaying(true);
         } catch (e) {
-            console.error("Audio play failed", e);
+            console.error("Alarm failed", e);
         }
+    };
+
+    const stopAlarm = () => {
+        try {
+            audioRef.current.pause();
+            audioRef.current.currentTime = 0;
+        } catch (e) {
+            console.error("Error stopping alarm", e);
+        }
+        setIsAlarmPlaying(false);
     };
 
     const handleSaveSettings = (newDurations) => {
@@ -88,6 +114,15 @@ const PomodoroWidget = () => {
 
     return (
         <div className="w-full h-full p-4 pt-28 flex flex-col items-center justify-center max-w-4xl mx-auto">
+
+            {isAlarmPlaying && (
+                <button
+                    onClick={stopAlarm}
+                    className="mb-6 px-8 py-3 bg-red-600 hover:bg-red-700 text-white font-bold rounded-full shadow-lg animate-pulse transition-transform transform hover:scale-105 active:scale-95"
+                >
+                    STOP ALARM 🔔
+                </button>
+            )}
 
             <ModeSelector
                 modes={MODES}

@@ -1,13 +1,14 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Plus, Calendar, Trash2, Edit2, CheckCircle, Circle, Clock } from 'lucide-react';
 import { useTaskStore } from '../../store/useTaskStore';
 
 const TaskTemplate = () => {
     // 1. Realtime Date Logic
-    const [currentDate, setCurrentDate] = useState(new Date());
+    const [currentTime, setCurrentTime] = useState(new Date()); // For clock only
+    const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]); // Default to today string YYYY-MM-DD
 
     useEffect(() => {
-        const timer = setInterval(() => setCurrentDate(new Date()), 1000);
+        const timer = setInterval(() => setCurrentTime(new Date()), 1000);
         return () => clearInterval(timer);
     }, []);
 
@@ -16,33 +17,59 @@ const TaskTemplate = () => {
         day: 'numeric',
         month: 'long',
         year: 'numeric'
-    }).format(currentDate);
+    }).format(currentTime);
 
     // 2. Global Task State
     const { tasks, addTask, editTask, deleteTask, toggleTask } = useTaskStore();
 
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [currentTask, setCurrentTask] = useState(null); // For editing
-    const [formData, setFormData] = useState({ project: '', title: '', time: '' });
+    const [formData, setFormData] = useState({ project: '', title: '', time: '', date: '' });
+
+    // Filter tasks for the display date (default today)
+    // Note: We currently only show "Today's Schedule". 
+    // Ideally we could let user pick the view date, but for now we stick to "Today" to match original design.
+    // However, we filter the list to ensure we don't show tomorrow's tasks here.
+    const todaysTasks = useMemo(() => {
+        const todayStr = new Date().toISOString().split('T')[0];
+        return tasks.filter(t => t.date === todayStr).sort((a, b) => a.time.localeCompare(b.time));
+    }, [tasks]);
 
     // Handlers
     const openModal = (task = null) => {
         if (task) {
             setCurrentTask(task);
-            setFormData({ project: task.project, title: task.title, time: task.time });
+            setFormData({
+                project: task.project,
+                title: task.title,
+                time: task.time,
+                date: task.date || new Date().toISOString().split('T')[0]
+            });
         } else {
             setCurrentTask(null);
-            setFormData({ project: '', title: '', time: '' });
+            setFormData({
+                project: '',
+                title: '',
+                time: '',
+                date: new Date().toISOString().split('T')[0] // Default to today for new task
+            });
         }
         setIsModalOpen(true);
     };
 
     const handleSubmit = (e) => {
         e.preventDefault();
+
+        // Ensure date is set
+        const taskData = {
+            ...formData,
+            date: formData.date || new Date().toISOString().split('T')[0]
+        };
+
         if (currentTask) {
-            editTask(currentTask.id, formData);
+            editTask(currentTask.id, taskData);
         } else {
-            addTask(formData);
+            addTask(taskData);
         }
         setIsModalOpen(false);
     };
@@ -60,19 +87,19 @@ const TaskTemplate = () => {
                     className="flex items-center gap-2 bg-gray-900 text-white px-6 py-3 rounded-full hover:bg-gray-800 transition-colors shadow-lg"
                 >
                     <Plus size={20} />
-                    <span className="font-medium">Add New Task</span>
+                    <span>Add New Task</span>
                 </button>
             </div>
 
-            {/* Task List */}
+            {/* Task List (Filtered for Today) */}
             <div className="space-y-4">
-                {tasks.length === 0 ? (
+                {todaysTasks.length === 0 ? (
                     <div className="text-center py-20 text-gray-400">
                         <Calendar size={48} className="mx-auto mb-4 opacity-30" />
                         <p>No tasks for today. Enjoy your day!</p>
                     </div>
                 ) : (
-                    tasks.map((task) => (
+                    todaysTasks.map((task) => (
                         <div key={task.id} className="group bg-white rounded-2xl p-6 shadow-sm border border-gray-100 hover:shadow-md transition-all flex items-center gap-6">
                             {/* Time */}
                             <div className="flex flex-col items-center min-w-[80px]">
@@ -137,19 +164,36 @@ const TaskTemplate = () => {
                                     onChange={e => setFormData({ ...formData, title: e.target.value })}
                                 />
                             </div>
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Time</label>
-                                <div className="relative">
-                                    <Clock className="absolute left-4 top-3.5 text-gray-400" size={18} />
-                                    <input
-                                        type="time"
-                                        required
-                                        className="w-full pl-11 pr-4 py-3 rounded-xl border border-gray-200 focus:border-gray-900 focus:ring-0 outline-none transition-all"
-                                        value={formData.time}
-                                        onChange={e => setFormData({ ...formData, time: e.target.value })}
-                                    />
+
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Date</label>
+                                    <div className="relative">
+                                        <Calendar className="absolute left-4 top-3.5 text-gray-400" size={18} />
+                                        <input
+                                            type="date"
+                                            required
+                                            className="w-full pl-11 pr-4 py-3 rounded-xl border border-gray-200 focus:border-gray-900 focus:ring-0 outline-none transition-all"
+                                            value={formData.date}
+                                            onChange={e => setFormData({ ...formData, date: e.target.value })}
+                                        />
+                                    </div>
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Time</label>
+                                    <div className="relative">
+                                        <Clock className="absolute left-4 top-3.5 text-gray-400" size={18} />
+                                        <input
+                                            type="time"
+                                            required
+                                            className="w-full pl-11 pr-4 py-3 rounded-xl border border-gray-200 focus:border-gray-900 focus:ring-0 outline-none transition-all"
+                                            value={formData.time}
+                                            onChange={e => setFormData({ ...formData, time: e.target.value })}
+                                        />
+                                    </div>
                                 </div>
                             </div>
+
                             <div className="flex gap-3 mt-8 pt-4">
                                 <button
                                     type="button"

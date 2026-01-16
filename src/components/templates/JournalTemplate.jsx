@@ -16,10 +16,7 @@ const JournalTemplate = () => {
     // --- State: Sticky Notes ---
     const [stickyNotes, setStickyNotes] = useState(() => {
         const saved = localStorage.getItem('journal-stickies');
-        return saved ? JSON.parse(saved) : [
-            { id: 1, content: 'Call Mom at 5 PM', color: 'bg-yellow-200' },
-            { id: 2, content: 'Buy milk and eggs', color: 'bg-green-200' }
-        ];
+        return saved ? JSON.parse(saved) : [];
     });
 
     // --- State: Entries ---
